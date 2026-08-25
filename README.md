@@ -1,16 +1,12 @@
-# SCaMPI-seq
+# :rocket: SCaMPI-seq
 SCaMPI-seq analysis workflow
 
 
 ## Table of contents
-- [Requirements](#Requirements)
 - [Installation](#Installation)
 - [Documentation](#Documentation)
 - [Reference](#Reference)
 - [Contact](#Contact)
-
-
-## Requirements
 
 
 ## 🛠️Installation
