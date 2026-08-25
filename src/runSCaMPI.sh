@@ -1,4 +1,5 @@
 
+# 1.extract_fastq1_barcode
 sample=CRR1158889
 FQ1=/data/database/MAGIC-seq-NG/Olfb/CRR1158889_R1.fastq.gz
 FQ2=/data/database/MAGIC-seq-NG/Olfb/CRR1158889_R2.fastq.gz
