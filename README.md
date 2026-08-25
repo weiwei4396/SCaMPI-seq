@@ -1,8 +1,8 @@
-# :rocket: SCaMPI-seq
+# :rocket:SCaMPI-seq
 SCaMPI-seq analysis workflow
 
 
-## Table of contents
+## 👀Table of contents
 - [Installation](#Installation)
 - [Documentation](#Documentation)
 - [Reference](#Reference)
