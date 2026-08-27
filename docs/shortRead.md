@@ -7,6 +7,8 @@ Welcome to the SCaMPI-seq short-read data analysis tutorials. This section provi
 
 欢迎来到 SCaMPI-seq 短读长数据分析教程。本部分提供详细的示例和分步操作指南，帮助您理解分析流程，并高效开展 SCaMPI-seq 短读长数据分析。
 
+## SCaMPI-seq workflow
+
 ``` mermaid
 %%{init: {'themeVariables': { 'fontSize': '20px' }}}%%
 graph LR
@@ -52,15 +54,15 @@ Short-read data for SCaMPI-seq were generated using the [MAGIC-seq](https://gith
 
 SCaMPI-seq 的短读长数据基于[MAGIC-seq](https://github.com/bioinfo-biols/MAGIC-seq)进行测序，其数据分析流程与 MAGIC-seq 基本一致。整个流程主要包括三个步骤：
 
-* 首先，根据预先提供的 barcode 清单，从原始测序数据中筛选并提取包含有效 barcode 的 reads；
+* 1. 根据预先提供的 barcode 清单，从原始测序数据中筛选并提取包含有效 barcode 的 reads；
 
-* 其次，将这些 reads 比对至参考基因组以获得基因表达信息；
+* 2. 将这些 reads 比对至参考基因组以获得基因表达信息；
 
-* 最后，手动提供三个芯片边缘 spot 的中心坐标，据此推算芯片上各 spot 对应的像素坐标，并通过明场图像与染色图像的配准进一步完成空间坐标映射。最终，将空间坐标信息与基因表达信息整合并存储于 AnnData 对象中，以供后续分析使用。
+* 3. 手动提供三个芯片边缘 spot 的中心坐标，据此推算芯片上各 spot 对应的像素坐标，并通过明场图像与染色图像的配准进一步完成空间坐标映射。最终，将空间坐标信息与基因表达信息整合并存储于 AnnData 对象中，以供后续分析使用。
 
 
 
-## SCaMPI-seq short read input files
+## SCaMPI-seq input files
 To run SCaMPI-seq, you should provide:
 
 * FASTQ (FASTQ.gz) should be processed into sorted SAM. [minimap2]
@@ -80,9 +82,9 @@ Before running SCaMPI-seq, the following input files should be prepared:
 * Spatial imaging files: A fluorescence image showing the spatial distribution of spots is required. Bright-field and full-resolution H&E-stained images can also be optionally provided. The fluorescence image is used to visualize spot positions, while the bright-field and H&E images enable more accurate spatial registration and visualization of the spots relative to the corresponding tissue structures.
 
 !!! note
-    To ensure compatibility, the same version of STAR should be used for genome index construction and read alignment. 构建基因组索引和比对时的STAR版本需一致
+    To ensure compatibility, the same version of STAR should be used for genome index construction and read alignment.
 
-??? info "build STAR genome index / STAR构建基因组索引"
+??? info "build STAR genome index"
     ```shell
     reference=/data/workdir/panw/reference/human/refdata-gex-GRCh38-2024-A/fasta/genome.fa
     gtf=/data/workdir/panw/reference/human/refdata-gex-GRCh38-2024-A/genes/genes.gtf
@@ -101,31 +103,58 @@ Before running SCaMPI-seq, the following input files should be prepared:
 
 * 空间成像文件：需要提供 spot 的荧光图像；此外，还可选提供明场图像和全分辨率 H&E 染色图像。荧光图像用于展示 spot 的空间位置，而明场图像和 H&E 图像可用于将 spot 与对应的组织结构进行更直观、准确的空间匹配和展示。
 
-
-
-## :book: SCaMPI-seq short read pipeline
-
-* [x] Step1 Extract the valid barcode 提取有效barcode
-
-```shell
-
-```
-
 !!! note
-    The mapping **SAM files** need to be **sorted** by samtools before running BroCOLI.
+    构建基因组索引和比对时的STAR版本需一致
 
-??? info "Noisy cDNA data recommended parameter"
-    For **noisy 1D cDNA Nanopore data** the developer of Minimap2 suggests adding **-k 14** and **-w 4**:
+??? info "STAR构建基因组索引"
     ```shell
-    minimap2 -ax splice -ub -k14 -w 4 --secondary=no -t 20 ref.fasta raw.fastq.gz > raw.sam
+    reference=/data/workdir/panw/reference/human/refdata-gex-GRCh38-2024-A/fasta/genome.fa
+    gtf=/data/workdir/panw/reference/human/refdata-gex-GRCh38-2024-A/genes/genes.gtf
+    outputFolder=./star2710b
+    thread=16
+    STAR --runThreadN $thread --runMode genomeGenerate --genomeDir $outputFolder --genomeFastaFiles $reference --sjdbGTFfile $gtf --sjdbOverhang 100 --genomeSAindexNbases 14 --genomeChrBinNbits 18 --genomeSAsparseD 3
     ```
 
 
+## :book: SCaMPI-seq pipeline
 
-* [x] Step2 Transcript identification and quantification
+* [x] Step1 Extract the valid barcode 提取有效barcode
 
-* For a single SAM file, use the -s parameter to specify its absolute path **(i)**.
-* For multiple files, set the -s parameter to the directory containing the sorted SAM files **(ii)**. Alternatively, you can provide a TXT/TSV file listing the absolute path to each input SAM file on a separate line. The output order will correspond to the order listed in the file **(iii)**.
+首先第1步，校正1bp错误的barcode，我的脚本只保留了1bp的错配的barcode。思路是将所有的barcode序列中的8个位置分别替换成"AGCTN"，构建真实barcode与所有候选barcode的哈希表，首先判定是否是正确的barcode，然后判定是否是候选1bp错误内的barcode。不满足条件的reads直接丢弃。最后使用pigz压缩为gz文件。
+
+```shell
+# 1.extract_fastq1_barcode, only X and Y barcode
+sample=CRR1158889
+FQ1=/data/database/MAGIC-seq-NG/Olfb/CRR1158889_R1.fastq.gz
+FQ2=/data/database/MAGIC-seq-NG/Olfb/CRR1158889_R2.fastq.gz
+barcodeX=/data/database/MAGIC-seq-NG/Olfb/Mouse_Adult_Organ_T9_70_50um/Spatial_barcodeA70.txt
+barcodeY=/data/database/MAGIC-seq-NG/Olfb/Mouse_Adult_Organ_T9_70_50um/Spatial_barcodeB70.txt
+resultLinker=/data/database/MAGIC-seq-NG/Olfb/result
+
+getPY=/data/database/MAGIC-seq-NG/Olfb/0_extract_fastq1_barcode.py
+
+python $getPY \
+	-i $FQ1 -I $FQ2 \
+	--bcx $barcodeX --bcy $barcodeY \
+	-m 2 -o $resultLinker 
+
+cd $resultLinker
+pigz -p 16 ${sample}_R1_trim.fastq
+pigz -p 16 ${sample}_R2_trim.fastq
+```
+
+
+
+
+* [x] Step2 Alignment to the reference genome 
+
+
+使用STARsolo 将过滤后的reads比对到参考基因组。
+
+上面的代码是针对的三个barcode的情况，两个barcode的情况同理，可以直接看脚本：BarcodeXY | BarcodeXYZ
+
+
+
 
 
 
