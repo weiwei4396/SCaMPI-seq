@@ -5,29 +5,52 @@ icon: material/lightning-bolt
 # SCaMPI-seq short read Tutorials
 Welcome to the SCaMPI-seq short-read data analysis Tutorials. In this section, we provide detailed examples and guides to help you understand and utilize the data effectively. 
 
-Short-read data for SCaMPI-seq were generated using the [MAGIC-seq](https://github.com/bioinfo-biols/MAGIC-seq) sequencing strategy, and the data analysis workflow largely followed that of MAGIC-seq. The workflow consists of three main steps. First, reads containing valid barcodes are identified and extracted from the raw sequencing data according to a predefined barcode whitelist. Next, the extracted reads are aligned to the reference genome to obtain gene expression information. Finally, the center coordinates of three peripheral spots on the chip are manually provided and used to infer the pixel coordinates of all spots on the chip, followed by image registration between the bright-field and stained images to complete the spatial coordinate mapping. The resulting spatial coordinates and gene expression information are then integrated and stored in an AnnData object for downstream analysis.
-
-SCaMPI-seq 的短读长数据基于[MAGIC-seq](https://github.com/bioinfo-biols/MAGIC-seq)进行测序，其数据分析流程与 MAGIC-seq 基本一致。整个流程主要包括三个步骤。首先，根据预先提供的 barcode 清单，从原始测序数据中筛选并提取包含有效 barcode 的 reads；随后，将这些 reads 比对至参考基因组以获得基因表达信息；最后，手动提供三个芯片边缘 spot 的中心坐标，据此推算芯片上各 spot 对应的像素坐标，并通过明场图像与染色图像的配准进一步完成空间坐标映射。最终，将空间坐标信息与基因表达信息整合并存储于 AnnData 对象中，以供后续分析使用。
-
 ``` mermaid
 %%{init: {'themeVariables': { 'fontSize': '20px' }}}%%
 graph LR
+
   classDef input fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:black;
   classDef process fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:black;
   classDef result fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:black;
 
-  A[raw fastq.gz]:::input
-  B{R1\{_}trim.fastq.gz}:::process
-  C[gene quantification files]:::process
-  D[h5ad]:::result
+  A[Raw paired-end FASTQ.gz]:::input
+  X[Barcode whitelist<br/>X / Y / Z]:::input
+  R[Reference genome<br/>STAR index]:::input
+  I[Fluorescence image<br/>Bright-field / H&E optional]:::input
 
-  A --> |"0_extract_fastq1_barcode.py"| B
-  B --> |"STAR"| C
-  C --> |"python"| D
+  B[Valid-barcode reads<br/>Filtered FASTQ.gz]:::process
+  C[Gene expression matrix]:::process
+  E[Spatial coordinates]:::process
+  D[AnnData .h5ad]:::result
 
-  linkStyle 0,3 stroke:#ff9800,stroke-width:4px;
-  linkStyle 1,2,4 stroke:#9c27b0,stroke-width:4px;
+  A -->|"Python"| B
+  X -->|"Barcode matching"| B
+
+  B -->|"STAR alignment<br/>Gene quantification"| C
+  R -->|"Reference"| C
+
+  I -->|"Image registration<br/>Coordinate inference"| E
+
+  C -->|"Expression"| D
+  E -->|"Spatial information"| D
+
+  linkStyle 0,1 stroke:#ff9800,stroke-width:4px;
+  linkStyle 2,3 stroke:#9c27b0,stroke-width:4px;
+  linkStyle 4 stroke:#00897b,stroke-width:4px;
+  linkStyle 5,6 stroke:#43a047,stroke-width:4px;
 ```
+
+Short-read data for SCaMPI-seq were generated using the [MAGIC-seq](https://github.com/bioinfo-biols/MAGIC-seq) sequencing strategy, and the data analysis workflow largely followed that of MAGIC-seq. The workflow consists of three main steps：
+- First, reads containing valid barcodes are identified and extracted from the raw sequencing data according to a predefined barcode whitelist.
+- Next, the extracted reads are aligned to the reference genome to obtain gene expression information.
+- Finally, the center coordinates of three peripheral spots on the chip are manually provided and used to infer the pixel coordinates of all spots on the chip, followed by image registration between the bright-field and stained images to complete the spatial coordinate mapping. The resulting spatial coordinates and gene expression information are then integrated and stored in an AnnData object for downstream analysis.
+
+SCaMPI-seq 的短读长数据基于[MAGIC-seq](https://github.com/bioinfo-biols/MAGIC-seq)进行测序，其数据分析流程与 MAGIC-seq 基本一致。整个流程主要包括三个步骤：
+- 首先，根据预先提供的 barcode 清单，从原始测序数据中筛选并提取包含有效 barcode 的 reads；
+- 其次，将这些 reads 比对至参考基因组以获得基因表达信息；
+- 最后，手动提供三个芯片边缘 spot 的中心坐标，据此推算芯片上各 spot 对应的像素坐标，并通过明场图像与染色图像的配准进一步完成空间坐标映射。最终，将空间坐标信息与基因表达信息整合并存储于 AnnData 对象中，以供后续分析使用。
+
+
 
 ## SCaMPI-seq short read input files
 To run SCaMPI-seq, you should provide:
