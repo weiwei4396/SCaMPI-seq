@@ -3,7 +3,9 @@ icon: material/lightning-bolt
 ---
 
 # SCaMPI-seq short read Tutorials
-Welcome to the SCaMPI-seq short-read data analysis Tutorials. In this section, we provide detailed examples and guides to help you understand and utilize the data effectively. 
+Welcome to the SCaMPI-seq short-read data analysis tutorials. This section provides practical examples and step-by-step instructions for processing and analyzing SCaMPI-seq short-read data.
+
+欢迎来到 SCaMPI-seq 短读长数据分析教程。本部分提供详细的示例和分步操作指南，帮助您理解分析流程，并高效开展 SCaMPI-seq 短读长数据分析。
 
 ``` mermaid
 %%{init: {'themeVariables': { 'fontSize': '20px' }}}%%
