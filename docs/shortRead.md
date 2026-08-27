@@ -44,19 +44,19 @@ graph LR
 
 Short-read data for SCaMPI-seq were generated using the [MAGIC-seq](https://github.com/bioinfo-biols/MAGIC-seq) sequencing strategy, and the data analysis workflow largely followed that of MAGIC-seq. The workflow consists of three main steps：
 
-- First, reads containing valid barcodes are identified and extracted from the raw sequencing data according to a predefined barcode whitelist.
+* First, reads containing valid barcodes are identified and extracted from the raw sequencing data according to a predefined barcode whitelist.
 
-- Next, the extracted reads are aligned to the reference genome to obtain gene expression information.
+* Next, the extracted reads are aligned to the reference genome to obtain gene expression information.
 
-- Finally, the center coordinates of three peripheral spots on the chip are manually provided and used to infer the pixel coordinates of all spots on the chip, followed by image registration between the bright-field and stained images to complete the spatial coordinate mapping. The resulting spatial coordinates and gene expression information are then integrated and stored in an AnnData object for downstream analysis.
+* Finally, the center coordinates of three peripheral spots on the chip are manually provided and used to infer the pixel coordinates of all spots on the chip, followed by image registration between the bright-field and stained images to complete the spatial coordinate mapping. The resulting spatial coordinates and gene expression information are then integrated and stored in an AnnData object for downstream analysis.
 
 SCaMPI-seq 的短读长数据基于[MAGIC-seq](https://github.com/bioinfo-biols/MAGIC-seq)进行测序，其数据分析流程与 MAGIC-seq 基本一致。整个流程主要包括三个步骤：
 
-- 首先，根据预先提供的 barcode 清单，从原始测序数据中筛选并提取包含有效 barcode 的 reads；
+* 首先，根据预先提供的 barcode 清单，从原始测序数据中筛选并提取包含有效 barcode 的 reads；
 
-- 其次，将这些 reads 比对至参考基因组以获得基因表达信息；
+* 其次，将这些 reads 比对至参考基因组以获得基因表达信息；
 
-- 最后，手动提供三个芯片边缘 spot 的中心坐标，据此推算芯片上各 spot 对应的像素坐标，并通过明场图像与染色图像的配准进一步完成空间坐标映射。最终，将空间坐标信息与基因表达信息整合并存储于 AnnData 对象中，以供后续分析使用。
+* 最后，手动提供三个芯片边缘 spot 的中心坐标，据此推算芯片上各 spot 对应的像素坐标，并通过明场图像与染色图像的配准进一步完成空间坐标映射。最终，将空间坐标信息与基因表达信息整合并存储于 AnnData 对象中，以供后续分析使用。
 
 
 
@@ -79,6 +79,18 @@ Before running SCaMPI-seq, the following input files should be prepared:
 
 * Spatial imaging files: A fluorescence image showing the spatial distribution of spots is required. Bright-field and full-resolution H&E-stained images can also be optionally provided. The fluorescence image is used to visualize spot positions, while the bright-field and H&E images enable more accurate spatial registration and visualization of the spots relative to the corresponding tissue structures.
 
+!!! note
+    To ensure compatibility, the same version of STAR should be used for genome index construction and read alignment. 构建基因组索引和比对时的STAR版本需一致
+
+??? info "build STAR genome index / STAR构建基因组索引"
+    ```shell
+    reference=/data/workdir/panw/reference/human/refdata-gex-GRCh38-2024-A/fasta/genome.fa
+    gtf=/data/workdir/panw/reference/human/refdata-gex-GRCh38-2024-A/genes/genes.gtf
+    outputFolder=./star2710b
+    thread=16
+    STAR --runThreadN $thread --runMode genomeGenerate --genomeDir $outputFolder --genomeFastaFiles $reference --sjdbGTFfile $gtf --sjdbOverhang 100 --genomeSAindexNbases 14 --genomeChrBinNbits 18 --genomeSAsparseD 3
+    ```
+
 运行 SCaMPI-seq 前，需要准备以下输入文件：
 
 * 原始双端测序数据：提供原始测序生成的 paired-end FASTQ.gz 文件。
@@ -89,13 +101,14 @@ Before running SCaMPI-seq, the following input files should be prepared:
 
 * 空间成像文件：需要提供 spot 的荧光图像；此外，还可选提供明场图像和全分辨率 H&E 染色图像。荧光图像用于展示 spot 的空间位置，而明场图像和 H&E 图像可用于将 spot 与对应的组织结构进行更直观、准确的空间匹配和展示。
 
+
+
 ## :book: SCaMPI-seq short read pipeline
 
-* [x] Step1 Mapping of the fastq files with minimap2
+* [x] Step1 Extract the valid barcode 提取有效barcode
 
 ```shell
-minimap2 -ax splice -ub --secondary=no -t 20 ref.fasta raw.fastq.gz > raw.sam
-samtools sort -@ 20 -o raw_sorted.sam raw.sam
+
 ```
 
 !!! note
@@ -107,11 +120,6 @@ samtools sort -@ 20 -o raw_sorted.sam raw.sam
     minimap2 -ax splice -ub -k14 -w 4 --secondary=no -t 20 ref.fasta raw.fastq.gz > raw.sam
     ```
 
-??? info "A BED file can be provided to assist the mapping"
-    ```shell
-    paftools.js gff2bed anno.gtf > junctions.bed
-    minimap2 -ax splice -ub -k14 -w 4 --junc-bed junctions.bed --secondary=no -t 20 ref.fasta raw.fastq.gz > raw.sam
-    ```
 
 
 * [x] Step2 Transcript identification and quantification
