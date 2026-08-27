@@ -160,9 +160,9 @@ pigz -p 16 ${sample}_R2_trim.fastq
 |---|---|---|
 | `-i` | Raw paired-end read 1 | Yes |
 | `-I` | Raw paired-end read 2 | Yes |
-| `--bcx` | X barcode whitelist | Optional |
-| `--bcy` | Y barcode whitelist | Optional |
-| `--bcz` | Z barcode whitelist | Optional |
+| `--bcx` | X barcode whitelist, The first column specifies the index position of each barcode on the chip, and the second column provides the corresponding barcode sequence. | Optional |
+| `--bcy` | Y barcode whitelist followed the same format as the X barcode file. | Optional |
+| `--bcz` | Z barcode whitelist followed the same format as the X barcode file. | Optional |
 | `-m` | The number of barcode types: 2 or 3 | Yes |
 | `-o` | output folder path | Yes |
 | `--write_discarded` | Whether to output the discarded reads. By default, no output will be made. | Optional |
@@ -174,15 +174,73 @@ python $Extract -i $FASTQ1 -I $FASTQ2 --bcx $barcodeX --bcy $barcodeY -m 2 -o $r
 
 
 
-
-
-
 * [x] Step2 Alignment to the reference genome 
 
+* The extracted and filtered reads are aligned to the reference genome using STARsolo, followed by gene expression quantification.
 
-使用STARsolo 将过滤后的reads比对到参考基因组。
+* 使用 STARsolo 将提取并筛选后的 reads 比对至参考基因组，并进行后续的基因表达定量。
 
-上面的代码是针对的三个barcode的情况，两个barcode的情况同理，可以直接看脚本：BarcodeXY | BarcodeXYZ
+```shell
+# 1.准备数据;
+# 文件夹和样品;
+sampath=/data/database/MAGIC-seq-NG/Olfb/result
+sample=CRR1158889
+fastq1=${sampath}/${sample}_R1_trim.fastq.gz
+fastq2=${sampath}/${sample}_R2_trim.fastq.gz
+
+# 给定的白名单;
+whitelist=/data/database/MAGIC-seq-NG/Olfb/Mouse_Adult_Organ_T9_70_50um/whitelist
+
+# genomeGenerate生成参考基因组和参考注释
+MAP=/data/workdir/panw/reference/mouse/refdata-gex-GRCm39-2024-A/star2710b
+ANN=/data/workdir/panw/reference/mouse/refdata-gex-GRCm39-2024-A/genes/genes.gtf
+
+# 线程;
+t_num=16
+
+mkdir ${sampath}/STARsolo
+
+/data/workdir/panw/software/STAR-2.7.11b/bin/Linux_x86_64/STAR --genomeDir ${MAP} \
+  --outFileNamePrefix ${sampath}/STARsolo/${sample}_ \
+  --readFilesCommand zcat \
+  --readFilesIn ${fastq2} ${fastq1} \
+  --outSAMattributes NH HI nM AS CR UR CY UY CB UB GX GN sS sQ sM sF \
+  --outSAMtype BAM SortedByCoordinate \
+  --limitBAMsortRAM 121539607552 \
+  --soloType CB_UMI_Simple \
+  --soloCBwhitelist ${whitelist} \
+  --soloCBstart 1 \
+  --soloCBlen 16 \
+  --soloUMIstart 17 \
+  --soloUMIlen 12 \
+  --soloFeatures Gene GeneFull SJ Velocyto \
+  --soloMultiMappers EM \
+  --soloUMIdedup 1MM_All \
+  --soloCellFilter EmptyDrops_CR \
+  --soloCellReadStats Standard \
+  --clipAdapterType CellRanger4 \
+  --outReadsUnmapped Fastx \
+  --runThreadN ${t_num}
+
+```
+
+* Document Explanation
+| File | Description | Required |
+|---|---|---|
+| sampath | The path where the fastq files are located | Yes |
+| fastq1 | Read 1 file generated after Step 1 | Yes |
+| fastq2 | Read 2 file generated after Step 1 | Yes |
+| whitelist | The file contains a single column representing all combined barcode sequences. For datasets with two barcodes, the combined barcode sequence is 16 bp in length, whereas for datasets with three barcodes, it is 24 bp in length. | Yes |
+| MAP | genome index build by STAR | Yes |
+| ANN | reference annotation file | Yes |
+
+
+
+
+
+
+
+
 
 
 
