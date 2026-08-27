@@ -2,13 +2,6 @@
 SCaMPI-seq analysis workflow
 
 
-## 👀Table of contents
-- [Installation](#Installation)
-- [Documentation](#Documentation)
-- [Reference](#Reference)
-- [Contact](#Contact)
-
-
 ## 🛠️Installation
 
 
