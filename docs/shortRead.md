@@ -152,7 +152,7 @@ pigz -p 16 ${sample}_R1_trim.fastq
 pigz -p 16 ${sample}_R2_trim.fastq
 ```
 
-* The code above is designed for datasets containing two types of barcodes. For implementation details, please refer to [2Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI.sh). For datasets containing three types of barcodes, please refer to [3Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI3.sh). 以上代码适用于包含两种 barcode 的情况，具体实现请参考[2Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI.sh)，对于包含三种 barcode 的情况，请参考[3Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI3.sh)。
+* The code above is designed for datasets containing two types of barcodes. For implementation details, please refer to [2Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI2_step1.sh). For datasets containing three types of barcodes, please refer to [3Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI3_step1.sh). 以上代码适用于包含两种 barcode 的情况，具体实现请参考[2Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI2_step1.sh)，对于包含三种 barcode 的情况，请参考[3Barcode](https://github.com/weiwei4396/SCaMPI-seq/blob/main/src/runSCaMPI3_step1.sh)。
 
 * Script parameters，脚本参数如下：
 
